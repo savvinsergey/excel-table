@@ -13,21 +13,21 @@ function _generateID(trNum, tdNum) {
 }
 
 function _initCell (cell, id) {
-    const input = document.createElement('input')
-    const span = document.createElement('span')
+    const input = document.createElement('input');
+    const span = document.createElement('span');
 
     cell.addEventListener('click', () => {
-        input.classList.remove('hide')
-        span.classList.add('hide')
+        span.classList.add('hide');
+        input.classList.remove('hide');
+        input.focus();
     })
 
     cell.setAttribute('id', `${id.tdLetter}${id.trNum}`)
     input.addEventListener('blur', () => {
-        input.focus()
-        span.classList.remove('hide')
-        input.classList.add('hide')
+        span.classList.remove('hide');
+        input.classList.add('hide');
 
-        _calculateResult.call(this, cell)
+        _calculateResult.call(this, cell);
     })
 
     cell.appendChild(input);
@@ -35,55 +35,76 @@ function _initCell (cell, id) {
 }
 
 function _calculateResult(cell) {
-    const span = cell.querySelector('span')
-    const input = cell.querySelector('input')
-    const value = input && input.value.trim() || ''
-    let result = value
+    const span = cell.querySelector('span');
+    const input = cell.querySelector('input');
+    const value = input && input.value.trim() || '';
+    let result = value;
 
-    delete this.expressions[cell.id]
+    delete this.expressions[cell.id];
     if (value.substr(0, 1) === "=") {
-        let exp = value.substr(1, value.length - 1)
-        this.expressions[cell.id] = exp
+        let exp = value.substr(1, value.length - 1).toUpperCase();
+        const extractedCellsIDs = exp.match(/([A-Z]+[0-9]+)/g);
+        if (!_validateCell.call(this, cell.id, extractedCellsIDs)) {
+            input.value = ''
+            return;
+        }
 
-        const extractedCellsIDs = exp.match(/([A-Z]+[0-9]+)/g)
+        this.expressions[cell.id] = exp;
         if (extractedCellsIDs) {
             extractedCellsIDs.forEach((expCellID) => {
-                const expCell = document.getElementById(expCellID)
-                const cellValue = expCell && parseInt(expCell.querySelector(`span`).innerHTML, 10) || 0
+                const expCell = document.getElementById(expCellID);
+                const cellValue = expCell && parseInt(expCell.querySelector(`span`).innerHTML, 10) || 0;
 
-                exp = exp && exp.replace(expCellID, cellValue)
+                exp = exp && exp.replace(expCellID, cellValue);
             })
         }
 
-        result = eval(exp)
+        result = eval(exp);
     }
 
-    span.innerHTML = result
+    span.innerHTML = result;
 
     // It's needed for making changes in another cells which depends on changed cell
-    _recalculateExpressions.call(this, cell)
+    _recalculateExpressions.call(this, cell);
+}
+
+function _validateCell(cellID, extractedCellsIDs) {
+    const errors = [];
+    const cellsForChecking = [];
+    const circularReferenceErr = extractedCellsIDs.every((extractedCellID) =>
+        this.expressions[extractedCellID] &&
+        this.expressions[extractedCellID].indexOf(cellID) !== -1 &&
+        cellsForChecking.push(extractedCellID)
+    )
+    if (circularReferenceErr) {
+        errors.push(`Circular reference is not allowed. Please check cells: ${cellsForChecking.join(',')}`);
+    }
+
+    errors.forEach((message) => alert(`ERROR: ${message}`));
+
+    return !errors.length;
 }
 
 function _recalculateExpressions(cell) {
     Object.keys(this.expressions).forEach((expCellID) => {
-        let exp = this.expressions[expCellID]
+        let exp = this.expressions[expCellID].toUpperCase();
         if (expCellID !== cell.id && exp.indexOf(cell.id) !== -1) {
-            const expCell = document.getElementById(expCellID)
-            const span = expCell.querySelector(`span`)
+            const expCell = document.getElementById(expCellID);
+            const span = expCell.querySelector(`span`);
 
-            const extractedCellsIDs = exp.match(/([A-Z]+[0-9]+)/g)
+            const extractedCellsIDs = exp.match(/([A-Z]+[0-9]+)/g);
             if (extractedCellsIDs) {
                 extractedCellsIDs && extractedCellsIDs.forEach((expCellID) => {
-                    const expCell = document.getElementById(expCellID)
-                    const cellValue = expCell && parseInt(expCell.querySelector(`span`).innerHTML, 10) || 0
+                    const expCell = document.getElementById(expCellID);
+                    const cellValue = expCell && parseInt(expCell.querySelector(`span`).innerHTML, 10) || 0;
 
-                    exp = exp && exp.replace(expCellID, cellValue)
+                    exp = exp && exp.replace(expCellID, cellValue);
                 })
             }
 
-            span.innerHTML = eval(exp)
+            span.innerHTML = eval(exp);
 
-            _recalculateExpressions.call(this, expCell)
+            _recalculateExpressions.call(this, expCell);
         }
     })
 }
@@ -92,7 +113,7 @@ function _recalculateExpressions(cell) {
 
 export class ExcelTable {
     constructor() {
-        this.expressions = {}
+        this.expressions = {};
     }
 
     createTable(container, width, height) {
@@ -103,19 +124,19 @@ export class ExcelTable {
             const row = table.insertRow(-1);
             for (let tdNum = 0; tdNum <= height; tdNum++) {
                 const cell = row.insertCell(-1);
-                id = _generateID(trNum, tdNum)
+                id = _generateID(trNum, tdNum);
                 if (!tdNum) {
-                    cell.innerHTML = id.trNum
-                    cell.classList.add('headerTD')
+                    cell.innerHTML = id.trNum;
+                    cell.classList.add('headerTD');
                 }
 
                 if (!trNum) {
-                    cell.innerHTML = id.tdLetter
-                    cell.classList.add('headerTD')
+                    cell.innerHTML = id.tdLetter;
+                    cell.classList.add('headerTD');
                 }
 
                 if(trNum && tdNum) {
-                    _initCell.call(this, cell, id)
+                    _initCell.call(this, cell, id);
                 }
             }
         }
@@ -124,13 +145,13 @@ export class ExcelTable {
     }
 
     setCell(tr, td, value) {
-        const cell = document.getElementById(td+tr)
-        cell.querySelector('input').value = value
+        const cell = document.getElementById(td+tr);
+        cell.querySelector('input').value = value;
 
-        _calculateResult.call(this, cell)
+        _calculateResult.call(this, cell);
     }
 
     getCell(tr, td) {
-        return document.getElementById(td+tr)
+        return document.getElementById(td+tr);
     }
 }
