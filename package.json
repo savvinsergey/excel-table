@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/savvinsergey/finance-bond-chart.git"
+    "url": "git+https://github.com/savvinsergey/excel-table.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/savvinsergey/finance-bond-chart/issues"
+    "url": "https://github.com/savvinsergey/excel-table/issues"
   },
-  "homepage": "https://github.com/savvinsergey/finance-bond-chart#readme",
+  "homepage": "https://github.com/savvinsergey/excel-table#readme",
   "dependencies": {},
   "devDependencies": {
     "babel-cli": "^6.18.0",
