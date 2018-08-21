@@ -69,13 +69,28 @@ function _calculateResult(cell) {
 }
 
 function _validateCell(cellID, extractedCellsIDs) {
+    let circularReferenceErr = false;
+
     const errors = [];
     const cellsForChecking = [];
-    const circularReferenceErr = extractedCellsIDs.every((extractedCellID) =>
-        this.expressions[extractedCellID] &&
-        this.expressions[extractedCellID].indexOf(cellID) !== -1 &&
-        cellsForChecking.push(extractedCellID)
-    )
+    const checkCircularReferences = (extractedCellsIDs, prevCellsChain) => {
+        extractedCellsIDs.forEach((extractedCellID) => {
+            const newCellsChain = prevCellsChain || []
+            const exp = this.expressions[extractedCellID]
+            const extractedCellsIDs = exp && exp.match(/([A-Z]+[0-9]+)/g) || [];
+
+            newCellsChain.push(extractedCellID)
+            circularReferenceErr = exp &&
+                                   exp.indexOf(cellID) !== -1 &&
+                                   cellsForChecking.push(...newCellsChain)
+
+            if (!circularReferenceErr && extractedCellsIDs.length) {
+                checkCircularReferences(extractedCellsIDs, newCellsChain)
+            }
+        })
+    }
+
+    checkCircularReferences(extractedCellsIDs)
     if (circularReferenceErr) {
         errors.push(`Circular reference is not allowed. Please check cells: ${cellsForChecking.join(',')}`);
     }
